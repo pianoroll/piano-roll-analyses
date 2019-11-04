@@ -1,0 +1,18 @@
+#!/usr/local/bin/perl
+
+use strict;
+
+my $base = "anaylsis";
+
+my @files = @ARGV;
+
+foreach my $file (@files) {
+	if ($file !~ /^([a-z])([a-z]\d{3}[a-z]{2}\d{4})_analysis.txt.bz2$/) {
+		print STDERR "Error: $file is not well formed\n";
+		next;
+	}
+	my $letter = $1;
+	my $rest = $2;
+	`mkdir -p $base/$letter`;
+	`git mv $file $base/$letter`;
+}
