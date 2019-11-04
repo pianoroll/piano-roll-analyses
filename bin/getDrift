@@ -1,0 +1,52 @@
+#!/usr/local/bin/perl
+
+use strict;
+
+my $source = "analysis";
+my $target = "drift";
+
+my $location = "$source/*/*.txt.bz2";
+my @files = glob($location);
+
+foreach my $file (@files) {
+	my $base = $file;
+	$base =~ s/.*\///;
+	$base =~ s/_.*//;
+	die "Strange error: $base" if $base !~ /^[a-z]{2}\d{3}[a-z]{2}\d{4}$/;
+	my @contents = `bzcat $file`;
+	my $state = 0;
+	my $output = "";
+	foreach my $line (@contents) {
+		if ($line =~ /^\@\@BEGIN:\s*DRIFT\s*$/) {
+			$state = 1;
+		}
+		next if !$state;
+		if (($state == 1) && ($line =~ /^\@DATA:\s*$/)) {
+			$state = 2;
+			next;
+		}
+		next if $state != 2;
+		last if $line =~ /^\@\@END:\s*DRIFT\s*$/;
+		$line =~ s/^\t//;
+		chomp $line;
+		my @data = split(/\t+/, $line);
+		next if @data != 2;
+		$output .= "{\"r\":$data[0],\"d\":$data[1]},\n";
+	}
+	$output =~ s/,$//;
+
+	$base =~ /^(.)/;
+	my $letter = $1;
+	
+	`mkdir -p $target/$letter`;
+	my $outfile = "$target/$letter/${base}_drift.json";
+	next if -r $outfile;
+	print "Creating file $outfile ...\n";
+	open(XFILE, ">$outfile") or die "Cannot write $outfile\n";
+	print XFILE "[\n";
+	print XFILE $output;
+	print XFILE "]\n";
+	close XFILE;
+}
+
+
