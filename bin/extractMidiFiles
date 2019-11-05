@@ -1,0 +1,145 @@
+#!/usr/bin/perl
+# vim: ts=3
+
+use strict;
+
+my @files = @ARGV;
+
+for my $file (@files) {
+	processFileExp($file);
+	processFileHole($file);
+}
+
+
+##############################
+##
+## processFileHole --
+##
+
+sub processFileHole {
+	my ($file) = @_;
+
+	my $tempo = 94.6;
+
+	my $tempo = `grep -s "^\@TEMPO:" ../*.aton`;
+	if ($tempo =~ /(\d+)-(\d+)/) {
+	$tempo = $2;   # select the faster portion of the tempo range
+	# or could take the average of the range...
+	} elsif ($tempo =~ /(\d+)/) {
+		$tempo = $1;
+	} else {
+		$tempo = 94.6;  # red Welte-Mignon roll tempo
+	}
+
+	my $tpq = $tempo  * 6.0;
+	$tpq = int($tpq + 0.5);
+
+	open (FILE, $file) or die "cannot read $file";
+	my @contents = <FILE>;
+	close FILE;
+
+	my $index = -1;
+	for (my $i=@contents; $i>0; $i--) {
+		my $line = $contents[$i];
+		chomp $line;
+		if ($line =~ /^\@HOLE_MIDIFILE:/) {
+			$index = $i;
+			last;
+		}
+	}
+
+	die "Cannot find MIDI file in data" if $index < 0;
+	
+	my $midibytes;
+	my $found = 0;
+	for (my $i=$index+1; $i<@contents; $i++) {
+		my $line = $contents[$i];
+		last if $line =~ /^\@/;
+		if (!$found) {
+			if ($line =~ /2'510/) {
+				$found = 1;
+				$line =~ s/2'510/2'$tpq/;
+			}
+		}
+		$midibytes .= $line;
+	}
+	
+	my $basename = $file;
+	$basename =~ s/\.txt$//;
+	$basename =~ s/_analysis$/_raw/;
+	open (BFILE, ">$basename.binasc") or die "Cannot write $basename.binasc";
+	print BFILE $midibytes;
+	close BFILE;
+	
+	print "CREATING MIDI file $basename.mid\n";
+	`binasc $basename.binasc -c $basename.mid`;
+}
+
+
+
+##############################
+##
+## processFileExp --
+##
+
+sub processFileExp {
+	my ($file) = @_;
+
+	my $tempo = 94.6;
+
+	my $tempo = `grep -s "^\@TEMPO:" ../*.aton`;
+	if ($tempo =~ /(\d+)-(\d+)/) {
+	$tempo = $2;   # select the faster portion of the tempo range
+	# or could take the average of the range...
+	} elsif ($tempo =~ /(\d+)/) {
+		$tempo = $1;
+	} else {
+		$tempo = 94.6;  # red Welte-Mignon roll tempo
+	}
+
+	my $tpq = $tempo  * 6.0;
+	$tpq = int($tpq + 0.5);
+
+	open (FILE, $file) or die "cannot read $file";
+	my @contents = <FILE>;
+	close FILE;
+
+	my $index = -1;
+	for (my $i=@contents; $i>0; $i--) {
+		my $line = $contents[$i];
+		chomp $line;
+		if ($line =~ /^\@MIDIFILE:/) {
+			$index = $i;
+			last;
+		}
+	}
+
+	die "Cannot find MIDI file in data" if $index < 0;
+	
+	my $midibytes;
+	my $found = 0;
+	for (my $i=$index+1; $i<@contents; $i++) {
+		my $line = $contents[$i];
+		last if $line =~ /^\@/;
+		if (!$found) {
+			if ($line =~ /2'510/) {
+				$found = 1;
+				$line =~ s/2'510/2'$tpq/;
+			}
+		}
+		$midibytes .= $line;
+	}
+	
+	my $basename = $file;
+	$basename =~ s/\.txt$//;
+	$basename =~ s/_analysis$/_exp/;
+	open (BFILE, ">$basename.binasc") or die "Cannot write $basename.binasc";
+	print BFILE $midibytes;
+	close BFILE;
+	
+	print "CREATING MIDI file $basename.mid\n";
+	`binasc $basename.binasc -c $basename.mid`;
+}
+
+
+

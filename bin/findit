@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $base = "..";
+
+my @contents = <>;
+chomp @contents;
+
+for (my $i=0; $i<@contents; $i++) {
+	my $druid = $contents[$i];
+	findAnalysisFile($base, $druid);
+}
+
+
+sub findAnalysisFile {
+	my ($dir, $druid) = @_;
+	#print "SEARCHING $dir for $druid\n";
+	my @files = glob("$dir/${druid}_analysis*");
+	if (@files > 0) {
+		for (my $i=0; $i<@files; $i++) {
+			print "$druid\t$files[$i]\n";
+		}
+	}
+	my @subdirs;
+	opendir(DIR, $dir) or die "Cannot open $dir for reading\n";
+	my $file;
+	while ($file = readdir(DIR)) {
+		next if $file =~ /^\./;
+		next if !-d "$dir/$file";
+		next if -l "$dir/$file";
+		$subdirs[@subdirs] = $file;
+	}
+	closedir(DIR);
+	foreach $file (@subdirs) {
+		findAnalysisFile("$dir/$file", $druid);
+	}
+}
+
+

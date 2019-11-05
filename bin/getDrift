@@ -1,12 +1,23 @@
 #!/usr/local/bin/perl
+#
+# vim: ts=3
+#
 
 use strict;
 
 my $source = "analysis";
 my $target = "drift";
 
-my $location = "$source/*/*.txt.bz2";
-my @files = glob($location);
+my $type = 0;  # 0 = isolated, 1 = integrated
+my @files;
+if (@ARGV > 0) {
+	@files = @ARGV;
+	$type = 0;
+} else {
+	my $location = "$source/*/*.txt.bz2";
+	@files = glob($location);
+	$type = 1;
+}
 
 foreach my $file (@files) {
 	my $base = $file;
@@ -35,11 +46,16 @@ foreach my $file (@files) {
 	}
 	$output =~ s/,$//;
 
-	$base =~ /^(.)/;
-	my $letter = $1;
-	
-	`mkdir -p $target/$letter`;
-	my $outfile = "$target/$letter/${base}_drift.json";
+	my $outfile;
+
+	if ($type) {
+		$base =~ /^(.)/;
+		my $letter = $1;
+		`mkdir -p $target/$letter`;
+		$outfile = "$target/$letter/${base}_drift.json";
+	} else {
+		$outfile = "${base}_drift.json";
+	}
 	next if -r $outfile;
 	print "Creating file $outfile ...\n";
 	open(XFILE, ">$outfile") or die "Cannot write $outfile\n";
