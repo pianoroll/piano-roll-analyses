@@ -10,7 +10,7 @@ of the DRUID.  Files are compressed with bzip2 and can be uncompressed
 with `bunzip2 file.txt.bz2` which will uncompressed to `file.txt`.
 Unix command-line viewing can be done with the command `bzcat
 file.txt.bz2 | less`.  Uncompressed files are plain text in the ATON format 
-and can be converted to JSON data with the [ATON javascript library](https://aton.sapp.org) (see command-line utility [aton2jon](https://github.com/craigsapp/ATON/blob/master/example/cli/aton2json).  These files are also found
+and can be converted to JSON data with the [ATON javascript library](https://aton.sapp.org) (see command-line utility [aton2jon](https://github.com/craigsapp/ATON/blob/master/example/cli/aton2json)).  These files are also found
 in the same DRUID entry as the roll scans.
 
 ## Components of the anslyses ##
